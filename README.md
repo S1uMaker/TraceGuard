@@ -2,7 +2,7 @@
 
 基于 **C/eBPF + Go** 的单机 Docker 容器运行时行为监控项目。第一版监控成功的进程执行，关联容器，按配置检测并保留原始事件与告警，面向 Ubuntu 24.04 虚拟机中的学习、演示和简历项目积累。
 
-**当前源码：0.2.0，新增规则例外、分类统计和终端文本告警；本轮按用户要求未编译、未测试。** 已验证的基线是 v0.1.0：2026-09-21 在 Ubuntu 24.04.3、Linux 7.0.0-31-generic、amd64、Docker 29.1.3 环境下，构建、22 个单元测试函数及子场景、竞态检测、静态检查、回放和 16 项集成检查全部通过。详见 [验证报告与原始证据](docs/validation/2026-09-21/REPORT.md)；这些历史结果不代表 v0.2.0 新功能已经通过验证。持续进展记录在 [PROGRESS.md](PROGRESS.md)。
+**当前源码：0.2.0，新增规则例外、分类统计和终端文本告警；本轮按用户要求未编译、未测试。** 已验证的基线是 v0.1.0：2026-09-21 在 Ubuntu 24.04.3、Linux 7.0.0-31-generic、amd64、Docker 29.1.3 环境下，构建、22 个单元测试函数及子场景、竞态检测、静态检查、回放和 16 项集成检查全部通过。详见 [验证报告与原始证据](docs/validation/2026-09-21/REPORT.md)；这些历史结果不代表 v0.2.0 新功能已经通过验证。
 
 ## 当前功能
 
@@ -125,7 +125,7 @@ sudo ./build/traceguard run --output data-session-02 --alert-format text
 | `docs/DESIGN.md` | 数据流、选择理由、讲解线索和边界 |
 | `docs/OPEN_SOURCE.md` | 开源依赖、借鉴来源、本轮取舍及实现对应关系 |
 | `scripts/`、各包 `*_test.go` | Ubuntu 自动验收、单元测试与真实集成检查 |
-| `docs/DEMO.md`、`PROGRESS.md` | 演示步骤、真实证据和进展 |
+| `docs/DEMO.md`、`docs/validation/` | 演示步骤、验证报告和真实证据 |
 
 环境准备好且本地已有 `ubuntu:24.04` 镜像后，可在 Ubuntu 项目目录执行 `sudo bash scripts/validate_vm.sh`，重复完整验收。脚本会检查并安装缺少的构建依赖，每次独立保存结果；详见 [验证脚本说明](scripts/README.md)。
 

@@ -117,7 +117,7 @@ sudo docker info --format 'Cgroup={{.CgroupVersion}} Driver={{.CgroupDriver}}'
 sudo docker image inspect ubuntu:24.04 --format '{{json .RepoDigests}}'
 ```
 
-把上述实际输出、操作时间、使用的配置、日志目录和遇到的问题记入 [PROGRESS.md](../PROGRESS.md) 的验收记录。镜像标签会更新，记录实际镜像摘要便于复现。
+把上述实际输出、操作时间、使用的配置、日志目录和遇到的问题保存到本地验收记录，可参考 [已有验证报告](validation/2026-09-21/REPORT.md) 的记录方式。镜像标签会更新，记录实际镜像摘要便于复现。
 
 全部完成后，仅对这次专门创建且不再需要的演示容器执行：
 
