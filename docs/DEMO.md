@@ -2,7 +2,7 @@
 
 本文件用于手工演示与再次复现。2026-09-21 已通过对应的自动化场景，详见 [实际验证报告](validation/2026-09-21/REPORT.md)；自动化采用独立随机容器名，不是下文固定演示名称。先完成 [README](../README.md) 的依赖安装和构建，命令从 Ubuntu 本地 `~/TraceGuard` 目录执行。下表“未填写”供你下次亲自演示时记录。
 
-上述历史结果对应 v0.1.0。v0.2.0 新增文本输出、规则例外和分类统计，本轮未执行演示或测试；使用新选项前需同步并重新构建源码。
+上述历史结果对应 v0.1.0。v0.2.0 新增文本输出、规则例外和分类统计；v0.3.0 新增规则列表、回放预览和内核加载诊断。两轮增量均未重新编译、演示或测试；使用新选项前需同步并重新构建源码。
 
 ## 固定终端分工
 
@@ -136,3 +136,19 @@ sudo docker rm traceguard-late
 修改配置副本中的一条规则，为其添加 `exclude_container_names`，例如 shell 规则排除 `traceguard-control`；完整字段说明见 [配置文档](../configs/README.md)。使用该副本重新启动后，匹配的 control shell 事件仍应保存，本条 shell 告警应被排除并计入 `excluded_by_rule`；demo 容器和其他规则仍按各自条件判断。保留配置副本才能解释当时的例外决定。
 
 这里只记录新功能的使用方法，没有运行这些操作，也没有将预期写入历史通过记录。回放同样支持例外和 `--alert-format text`，使用输入中的来源快照，不重新识别容器。
+
+## 9. 查看规则与预览告警（v0.3.0，尚未执行）
+
+下面的命令只读取配置和已有样例，不需要启动采集器：
+
+```bash
+./build/traceguard list-rules
+./build/traceguard list-rules --format json
+./build/traceguard replay --input examples/events.jsonl --dry-run --alert-format text
+```
+
+`list-rules` 包含启用及禁用规则，展示条件、容器例外和描述。需要查看配置副本时添加 `--config 新文件路径`；默认文本便于阅读，JSON 格式输出完整规则数组。
+
+`replay --dry-run` 使用当前规则评估输入并显示告警，不创建输出目录、日志或锁文件，也不能同时指定 `--output`。默认样例预期产生一条预览告警；退出统计的 `mode` 为 `replay-dry-run`，`saved` 和 `alerts` 都为 0，`preview_alerts` 为 1，`preview_alerts_by_rule.docker-shell` 为 1。预览仍应用宿主机过滤及规则例外，更多字段说明见 [配置文档](../configs/README.md)。
+
+预览使用已有事件的来源快照，不能验证采集或容器归属是否正确。输入应为已停止写入的普通文件；不要把标准输出或标准错误重定向到输入文件。以上是使用说明及预期，本轮没有执行这些命令。

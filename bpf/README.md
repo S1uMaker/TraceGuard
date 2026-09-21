@@ -48,3 +48,9 @@ ring buffer 预留失败次数。用户态按 CPU 求和；该计数不包含后
 
 以上结果仅对应报告中的环境与用例。arm64 路径尚未实测，未做吞吐量、延迟或压力测试；
 不据此宣称无丢失或兼容所有内核版本。
+
+## v0.3.0 加载失败诊断（未重新测试）
+
+Go 加载器遇到 `*ebpf.VerifierError` 时，会在 `verifier details:` 后展示 cilium/ebpf 提供的详细校验日志，同时保留原始错误。实现遵循 [v0.17.3 官方示例](https://pkg.go.dev/github.com/cilium/ebpf@v0.17.3#example-VerifierError-RetrieveFullLog)，直接格式化内部错误，避免外层包装只显示摘要。它不改变 C 程序、探针或成功加载路径，也不会把其他加载错误一律归因为 verifier。日志能提供多少细节仍取决于内核与库。
+
+本轮未加载 eBPF 或制造失败场景；排错时仍需保留实际内核版本、tracepoint format 和完整错误，不能用此前加载成功的报告证明新增错误路径已经验证。

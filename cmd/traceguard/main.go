@@ -10,7 +10,7 @@ import (
 	"github.com/zjc20/traceguard/internal/rules"
 )
 
-const version = "0.2.0"
+const version = "0.3.0"
 
 func main() {
 	if err := execute(os.Args[1:]); err != nil {
@@ -34,6 +34,8 @@ func execute(args []string) error {
 	case "version", "--version":
 		fmt.Println("TraceGuard", version)
 		return nil
+	case "list-rules":
+		return listRulesCommand(args[1:])
 	case "run", "doctor", "check-config", "replay":
 	default:
 		return fmt.Errorf("unknown command %q; use traceguard help", args[0])
@@ -43,17 +45,28 @@ func execute(args []string) error {
 	outputPath := fs.String("output", "", "override output directory")
 	inputPath := ""
 	alertFormat := ""
+	dryRun := false
 	if args[0] == "run" || args[0] == "replay" {
 		fs.StringVar(&alertFormat, "alert-format", "", "stdout alert format: json (default) or text; overrides config")
 	}
 	if args[0] == "replay" {
 		fs.StringVar(&inputPath, "input", "", "recorded or synthetic event JSONL file")
+		fs.BoolVar(&dryRun, "dry-run", false, "preview rule results without creating or appending output files")
 	}
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
 	if fs.NArg() != 0 {
 		return fmt.Errorf("unexpected positional arguments: %v", fs.Args())
+	}
+	outputSet := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "output" {
+			outputSet = true
+		}
+	})
+	if dryRun && outputSet {
+		return errors.New("replay --dry-run cannot be combined with --output; preview does not write files")
 	}
 	cfg, err := config.Load(*configPath)
 	if err != nil {
@@ -87,6 +100,9 @@ func execute(args []string) error {
 		if inputPath == "" {
 			return errors.New("replay requires --input")
 		}
+		if dryRun {
+			return replayDryRun(cfg, engine, inputPath)
+		}
 		if *outputPath == "" {
 			return errors.New("replay requires a separate --output directory, for example data-replay")
 		}
@@ -103,16 +119,20 @@ func usage() {
 
 Usage (run from the project directory):
   traceguard check-config [--config configs/traceguard.json]
+  traceguard list-rules    [--config configs/traceguard.json] [--format text|json]
   traceguard doctor       [--config configs/traceguard.json]
   traceguard run          [--config configs/traceguard.json] [--output data] [--alert-format json|text]
   traceguard replay       --input examples/events.jsonl --output data-replay [--alert-format json|text]
+  traceguard replay       --input examples/events.jsonl --dry-run [--alert-format json|text]
   traceguard version
 
 Live collection requires Linux amd64/arm64, root, cgroup v2 and a local Docker daemon.
 doctor performs prerequisite checks only; it does not load eBPF or prove collection works.
 run/replay emit alert JSON to stdout by default; --alert-format text enables a compact display.
 JSONL files always contain full JSON records. Diagnostics/statistics go to stderr.
-Rule exclude_container_names suppresses only that rule's alerts; events remain recorded.
+Rule exclude_container_names suppresses only that rule's alerts; run/normal replay still record events.
+list-rules includes enabled and disabled rules and does not access Docker or eBPF.
+replay --dry-run writes only alerts to stdout and preview statistics to stderr; do not pass --output.
 Stop run with Ctrl+C. Replay does not load eBPF or contact Docker.
 `, version)
 }

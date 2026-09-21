@@ -41,6 +41,12 @@ func New(objectPath string) (*Collector, error) {
 	}
 	objects, err := ebpf.NewCollection(spec)
 	if err != nil {
+		var verifierErr *ebpf.VerifierError
+		if errors.As(err, &verifierErr) {
+			// The wrapped error only exposes a short summary. Format the typed
+			// error directly to retain the verifier log supplied by cilium/ebpf.
+			return nil, fmt.Errorf("load BPF object into kernel: %w\nverifier details:\n%+v", err, verifierErr)
+		}
 		return nil, fmt.Errorf("load BPF object into kernel: %w", err)
 	}
 	c := &Collector{collection: objects, stats: objects.Maps["stats"]}

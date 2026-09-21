@@ -24,6 +24,8 @@ type statistics struct {
 	UnknownReasons map[string]uint64 `json:"unknown_reasons,omitempty"`
 	Alerts         uint64            `json:"alerts"`
 	AlertsByRule   map[string]uint64 `json:"alerts_by_rule,omitempty"`
+	PreviewAlerts  uint64            `json:"preview_alerts,omitempty"`
+	PreviewByRule  map[string]uint64 `json:"preview_alerts_by_rule,omitempty"`
 	ExcludedAlerts uint64            `json:"excluded_alerts"`
 	ExcludedByRule map[string]uint64 `json:"excluded_by_rule,omitempty"`
 	KernelDropped  uint64            `json:"kernel_dropped"`
@@ -34,6 +36,7 @@ type pipeline struct {
 	engine      *rules.Engine
 	console     alertEncoder
 	includeHost bool
+	dryRun      bool
 	stats       statistics
 }
 
@@ -50,10 +53,12 @@ func (p *pipeline) process(event model.Event) error {
 		p.stats.HostFiltered++
 		return nil
 	}
-	if err := p.writer.WriteEvent(event); err != nil {
-		return err
+	if !p.dryRun {
+		if err := p.writer.WriteEvent(event); err != nil {
+			return err
+		}
+		p.stats.Saved++
 	}
-	p.stats.Saved++
 	result := p.engine.Evaluate(event)
 	for _, ruleID := range result.ExcludedRules {
 		p.stats.ExcludedAlerts++
@@ -63,14 +68,23 @@ func (p *pipeline) process(event model.Event) error {
 		p.stats.ExcludedByRule[ruleID]++
 	}
 	for _, alert := range result.Alerts {
-		if err := p.writer.WriteAlert(alert); err != nil {
-			return err
+		if p.dryRun {
+			// Count attempts before stdout encoding, without claiming persistence.
+			p.stats.PreviewAlerts++
+			if p.stats.PreviewByRule == nil {
+				p.stats.PreviewByRule = make(map[string]uint64)
+			}
+			p.stats.PreviewByRule[alert.RuleID]++
+		} else {
+			if err := p.writer.WriteAlert(alert); err != nil {
+				return err
+			}
+			p.stats.Alerts++
+			if p.stats.AlertsByRule == nil {
+				p.stats.AlertsByRule = make(map[string]uint64)
+			}
+			p.stats.AlertsByRule[alert.RuleID]++
 		}
-		p.stats.Alerts++
-		if p.stats.AlertsByRule == nil {
-			p.stats.AlertsByRule = make(map[string]uint64)
-		}
-		p.stats.AlertsByRule[alert.RuleID]++
 		if err := p.console.Encode(alert); err != nil {
 			return fmt.Errorf("write alert to stdout: %w", err)
 		}

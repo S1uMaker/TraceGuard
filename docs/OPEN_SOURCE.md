@@ -1,8 +1,8 @@
 # 开源参考与采用范围
 
-记录日期：2026-09-21。对应源码版本：v0.2.0。目标是完善单机 Docker 个人项目，继续使用 C/eBPF + Go、简单 JSON 规则、CLI 和本地 JSONL。
+记录日期：2026-09-21。当前源码版本：v0.3.0；本文分别保留两轮优化的来源和采用范围。目标是完善单机 Docker 个人项目，继续使用 C/eBPF + Go、简单 JSON 规则、CLI 和本地 JSONL。
 
-## 与三个开源项目的关系
+## 第一轮（v0.2.0）：与三个开源项目的关系
 
 | 项目与官方来源 | 与 TraceGuard 的关系 | 本轮采用范围 |
 | --- | --- | --- |
@@ -12,7 +12,7 @@
 
 上表区分项目现有能力与本项目实际采用的部分。本轮按本项目已有接口自行实现，没有复制上述项目的源文件，也未新增 Go 模块依赖。现有 cilium/ebpf 仍承担通用基础能力，TraceGuard 自己负责事件定义、Docker 来源关联、规则、统计、记录和回放的组合。
 
-## 从参考到实现
+## 第一轮（v0.2.0）：从参考到实现
 
 ### 1. 规则例外与可解释的排除计数
 
@@ -31,6 +31,24 @@ Falco 的例外设计允许对每条检测规则表达已知正常行为。Trace
 libbpf-bootstrap 的示例以紧凑的终端行展示进程事件。TraceGuard 借鉴这种展示取舍，提供 `--alert-format text`，一行显示时间、规则、容器、PID/UID、文件名、事件 ID 和回放标记；详细证据继续保存在 JSONL。
 
 实现位置：`cmd/traceguard/console.go`、`main.go`、`run.go`、`replay.go`。只使用 Go 标准库，默认 JSON 输出保持兼容；事件与配置中的字符串统一转义，文本不解释为终端控制序列。
+
+## 第二轮（v0.3.0）：规则查看、回放预览与加载诊断
+
+2026-09-21 再次检索了 Falco、cilium/ebpf 与 Tracee 的官方资料，采用与现有代码直接相关的三个做法。Tracee 的策略／输出说明用于对照，本轮没有移植其代码或新增相应依赖。
+
+| 核实的官方能力 | TraceGuard 的小范围实现 | 代码位置 |
+| --- | --- | --- |
+| [Falco CLI](https://falco.org/docs/reference/daemon/cli-arguments/) 支持 `-L` 列出规则、`-l` 查看单条规则 | `list-rules` 显示当前配置的全部规则（含停用状态、条件及例外），默认文本，可用 `--format json` 导出数组；不启动采集 | `cmd/traceguard/list_rules.go`、`main.go` |
+| [Falco 配置源码](https://github.com/falcosecurity/falco/blob/master/falco.yaml) 将 replay 输入及 stdout/file 输出分别配置 | 在已有 JSONL 回放上增加 `--dry-run`，复用规则判断，只向 stdout/stderr 输出，不打开日志或输出目录 | `cmd/traceguard/replay.go`、`pipeline.go` |
+| [cilium/ebpf v0.17.3 的 VerifierError 示例](https://pkg.go.dev/github.com/cilium/ebpf@v0.17.3#example-VerifierError-RetrieveFullLog) 使用 `errors.As` 和 `%+v` 读取详细 verifier 错误 | 仅在内核加载失败且错误为 `VerifierError` 时附带库返回的详细日志，保留原错误链，便于定位拒绝原因 | `internal/collector/collector_linux.go` |
+
+**这里的 `replay --dry-run` 是本项目的命令设计。** Falco 自身的 `--dry-run` 不处理事件，用于检查配置；本项目借鉴的是其离线输入与输出通道分离的思路，不能将两者描述为同一功能。
+
+TraceGuard 的预览会处理输入事件，保留 `replay: true`，沿用来源快照、host 过滤和逐规则例外；显式 `--output` 与预览互斥。终端告警格式与普通回放一致，结束统计以 `mode=replay-dry-run` 区分。`saved` 和 `alerts` 仍表示写文件的数量，所以预览中为 0；`preview_alerts`、`preview_alerts_by_rule` 单独记录预览告警，例外计数照常保留。预览不检查输出路径、不创建目录或锁，输入则必须是可读取的普通文件。
+
+这轮仍使用 cilium/ebpf `v0.17.3`，没有升级依赖、改变探针或引入外部分析服务。详细 verifier 日志来自失败时的错误对象，不额外开启成功加载的调试输出；权限、对象路径等其他错误继续保留原诊断。具体日志内容和完整程度取决于内核与依赖库提供的数据。
+
+本轮按用户要求未编译、未运行测试或上述新命令，只进行了源码静态阅读、格式化与文档核对。v0.2.0 和 v0.3.0 都属于待验证增量；v0.1.0 的历史报告与原始证据没有更新。
 
 ## 复杂度与验证边界
 

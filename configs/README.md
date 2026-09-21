@@ -64,11 +64,37 @@
 | `excluded_alerts` | 事件满足正向条件但命中例外的“事件－规则”次数；一个事件被两条规则排除计 2 次 |
 | `excluded_by_rule` | 上述例外次数按规则 ID 分类；总和等于 `excluded_alerts` |
 
-所有统计均为**本次进程运行累计**，实时每 10 秒及停止时输出，回放在结束时输出；不扫描旧日志、不在进程重启后恢复。例外次数仅在原事件成功追加后增加。三个分类对象没有记录时省略，`excluded_alerts` 为 0 时仍输出。告警成功落盘后若终端写入失败，已写入告警仍计数并报告错误。
+所有统计均为**本次进程运行累计**，实时每 10 秒及停止时输出，回放在结束时输出；不扫描旧日志、不在进程重启后恢复。实时／正常回放中，例外次数仅在原事件成功追加后增加；v0.3.0 预览模式的差异见下一节。三个分类对象没有记录时省略，`excluded_alerts` 为 0 时仍输出。告警成功落盘后若终端写入失败，已写入告警仍计数并报告错误。
 
 unknown 分类只允许代码中固定的原因：`missing_cgroup_id_or_pid`、`process_cgroup_unavailable`、`cgroup_path_unavailable`、`event_cgroup_no_longer_matches_process`、`docker_metadata_not_cached`、`unresolved_container_cgroup`、`docker_snapshot_unavailable_or_stale`、`unrecognized_cgroup_layout`、`conflicting_container_cgroup_mapping`、`cached_container_not_in_latest_snapshot`。缺少原因归入 `unspecified`，其他文字（包括合成样例的解释文字）归入 `other`，避免回放无限产生分类键。原事件的详细 `source.reason` 不变；Docker 来源附带的缓存提示不会计入 unknown。
 
 本节新增行为属于 v0.2.0 源码实现，本轮按要求未编译或测试。v0.1.0 的历史验收不覆盖这些新增字段。
+
+## v0.3.0：查看规则与不落盘预览
+
+这两个入口使用同一份现有配置，本轮没有新增 JSON 配置字段。以下命令是使用说明，尚未执行。
+
+```bash
+./build/traceguard list-rules --config configs/traceguard.json
+./build/traceguard list-rules --config configs/traceguard.json --format json
+./build/traceguard replay --config configs/traceguard.json --input examples/events.jsonl --dry-run --alert-format text
+```
+
+`list-rules` 默认 `--format text`，按配置顺序显示全部规则的 ID、启用状态、名称、级别、scope、文件名条件、容器条件、例外、UID 与说明。停用规则仍列出，不表示它们会参与检测；UID 为 0 时显示 0，未限制时显示 `any`。JSON 模式输出完整规则数组，空规则输出 `[]`。它加载并严格校验配置（包括停用规则），但不会启动采集器、查询 Docker 或打开日志。列表的 `--format` 独立于告警的 `alert_format`。
+
+`replay --dry-run` 读取普通输入文件并运行相同的解析、过滤与规则逻辑。省略 `--output`，显式提供该参数（即使空字符串）会报错。程序不会创建／追加输出文件或目录，不获取输出锁，不检查配置输出路径的权限或存在性；配置本身仍接受完整字段校验。标准输出是 JSON/text 告警，标准错误是结束统计及错误信息。告警结构沿用回放格式、事件保留 `replay: true`，是否落盘由命令及统计 `mode` 区分，不能只凭 stdout 告警推断已写文件。
+
+| 预览统计 | 含义 |
+| --- | --- |
+| `mode` | 固定 `replay-dry-run` |
+| `received`、`host_filtered`、`unknown`、`unknown_reasons` | 沿用普通回放的读取、过滤及原因统计 |
+| `saved`、`alerts` | 始终为 0，表示没有写入事件／告警文件；`alerts_by_rule` 不出现 |
+| `preview_alerts`、`preview_alerts_by_rule` | 预览匹配的告警数与规则分布，每条在尝试输出终端前增加；没有预览告警时省略这两个字段 |
+| `excluded_alerts`、`excluded_by_rule` | 预览中满足正向条件但命中例外的事件－规则次数；不会以原事件落盘作为前提 |
+
+预览保持每行最多 1 MiB、非法内容报出行号、缺失 ID／时间补全及 host 过滤规则。遇到后续坏行或终端输出错误时停止并返回错误；此前可能已经输出部分告警和统计，不能把它们当作完整成功结果。输入文件应已经停止追加，程序不锁定输入文件，也不提供实时跟随。输入权限仍由操作系统控制；如果自行使用 shell 重定向，不要把 stdout/stderr 指向输入文件。
+
+该预览命令用于以后调整规则，不表示本轮已经测试项目。v0.2.0 与 v0.3.0 增量均待后续验证，原 v0.1.0 报告保持原样。
 
 ## 输出权限与恢复边界
 

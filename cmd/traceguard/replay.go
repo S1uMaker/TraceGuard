@@ -17,7 +17,15 @@ import (
 	"github.com/zjc20/traceguard/internal/rules"
 )
 
-func replay(cfg config.Config, engine *rules.Engine, input string) (result error) {
+func replay(cfg config.Config, engine *rules.Engine, input string) error {
+	return replayWithMode(cfg, engine, input, false)
+}
+
+func replayDryRun(cfg config.Config, engine *rules.Engine, input string) error {
+	return replayWithMode(cfg, engine, input, true)
+}
+
+func replayWithMode(cfg config.Config, engine *rules.Engine, input string, dryRun bool) (result error) {
 	console, err := newAlertEncoder(os.Stdout, cfg.AlertFormat)
 	if err != nil {
 		return err
@@ -34,23 +42,32 @@ func replay(cfg config.Config, engine *rules.Engine, input string) (result error
 	if !inputInfo.Mode().IsRegular() {
 		return errors.New("replay input must be a regular file")
 	}
-	// Compare inode identity as well as paths: symlinks and hard links must not
-	// turn replay into an endless read-and-append of its own output.
-	for _, name := range []string{"events.jsonl", "alerts.jsonl"} {
-		info, statErr := os.Stat(filepath.Join(cfg.OutputDir, name))
-		if statErr == nil && os.SameFile(inputInfo, info) {
-			return errors.New("replay output must not overwrite or append to the input file")
+	var writer *output.Writer
+	mode := "replay-dry-run"
+	if !dryRun {
+		// Compare inode identity as well as paths: symlinks and hard links must not
+		// turn replay into an endless read-and-append of its own output.
+		for _, name := range []string{"events.jsonl", "alerts.jsonl"} {
+			info, statErr := os.Stat(filepath.Join(cfg.OutputDir, name))
+			if statErr == nil && os.SameFile(inputInfo, info) {
+				return errors.New("replay output must not overwrite or append to the input file")
+			}
+			if statErr != nil && !os.IsNotExist(statErr) {
+				return statErr
+			}
 		}
-		if statErr != nil && !os.IsNotExist(statErr) {
-			return statErr
+		writer, err = output.New(cfg.OutputDir)
+		if err != nil {
+			return err
 		}
+		defer func() { result = errors.Join(result, writer.Close()) }()
+		mode = "replay"
 	}
-	writer, err := output.New(cfg.OutputDir)
-	if err != nil {
-		return err
+	pipe := &pipeline{
+		writer: writer, engine: engine, console: console,
+		includeHost: cfg.IncludeHost, dryRun: dryRun,
+		stats: statistics{Mode: mode},
 	}
-	defer func() { result = errors.Join(result, writer.Close()) }()
-	pipe := &pipeline{writer: writer, engine: engine, console: console, includeHost: cfg.IncludeHost, stats: statistics{Mode: "replay"}}
 	defer func() { result = errors.Join(result, pipe.report(os.Stderr, "stopped")) }()
 	session, err := sessionID()
 	if err != nil {
@@ -85,7 +102,7 @@ func replay(cfg config.Config, engine *rules.Engine, input string) (result error
 		}
 		event.Replay = true
 		if err := pipe.process(event); err != nil {
-			return err
+			return fmt.Errorf("replay line %d: %w", line, err)
 		}
 	}
 	if err := scanner.Err(); err != nil {

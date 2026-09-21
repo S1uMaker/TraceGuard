@@ -20,3 +20,13 @@
 告警内嵌的事件也带有该标记。
 
 v0.2.0 可选 `--alert-format text` 只改变终端显示，不改样例或保存的 JSONL。样例中的 unknown 原因是解释性文字，新增统计会归入 `unknown_reasons.other`；若在配置副本的 shell 规则中用 `exclude_container_names` 排除 `traceguard-demo`，预期仍保存三个事件，但 shell 告警改为一次例外计数。以上为新增功能预期，本轮按要求未回放或测试，不属于前述历史验证结果。
+
+v0.3.0 可以直接预览，无需指定输出目录：
+
+```bash
+./build/traceguard replay --input examples/events.jsonl --dry-run --alert-format text
+```
+
+使用默认配置的预期：显示一条 `docker-shell` 告警，统计为 `mode=replay-dry-run`、`received=3`、`unknown=1`、`unknown_reasons.other=1`、`saved=0`、`alerts=0`、`preview_alerts=1`，以及 `preview_alerts_by_rule.docker-shell=1`。不创建事件文件、告警文件或输出目录。
+
+若采用前述排除 `traceguard-demo` 的配置副本，预期不显示告警，改为 `excluded_alerts=1`、`excluded_by_rule.docker-shell=1`；零值 `preview_alerts` 和空的 `preview_alerts_by_rule` 不输出。上述 v0.3.0 结果同样只是源码对应的预期，本轮未执行回放或测试。

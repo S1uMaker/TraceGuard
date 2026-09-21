@@ -2,7 +2,7 @@
 
 基于 **C/eBPF + Go** 的单机 Docker 容器运行时行为监控项目。第一版监控成功的进程执行，关联容器，按配置检测并保留原始事件与告警，面向 Ubuntu 24.04 虚拟机中的学习、演示和简历项目积累。
 
-**当前源码：0.2.0，新增规则例外、分类统计和终端文本告警；本轮按用户要求未编译、未测试。** 已验证的基线是 v0.1.0：2026-09-21 在 Ubuntu 24.04.3、Linux 7.0.0-31-generic、amd64、Docker 29.1.3 环境下，构建、22 个单元测试函数及子场景、竞态检测、静态检查、回放和 16 项集成检查全部通过。详见 [验证报告与原始证据](docs/validation/2026-09-21/REPORT.md)；这些历史结果不代表 v0.2.0 新功能已经通过验证。
+**当前源码：0.3.0，本轮新增规则列表、不落盘回放预览和 eBPF 加载失败诊断；按用户要求未编译、未测试。** v0.2.0 的规则例外、分类统计和文本告警同样尚未重新验证。已验证基线为 v0.1.0：2026-09-21 在 Ubuntu 24.04.3、Linux 7.0.0-31-generic、amd64、Docker 29.1.3 环境下，构建、22 个单元测试函数及子场景、竞态检测、静态检查、回放和 16 项集成检查全部通过。详见 [验证报告与原始证据](docs/validation/2026-09-21/REPORT.md)；历史结果不代表后续新增功能已经通过验证。
 
 ## 当前功能
 
@@ -10,7 +10,7 @@
 - Go 通过 ring buffer 读取事件，用 Docker 元数据与 cgroup v2 inode 关联来源；不能确认的来源保留为 `unknown`。
 - 默认检测容器内启动 shell、执行 `id/whoami/uname` 两类行为；规则可限定容器名、UID 和精确可执行文件名，并可按规则排除指定容器的告警，原始事件仍保留。
 - 追加保存 `events.jsonl` 与 `alerts.jsonl`；告警包含事件快照、规则 ID 和命中依据。终端默认输出 JSON，可选简洁文本；标准错误输出状态、内核丢失计数、unknown 原因和各规则告警／例外次数。
-- 提供配置校验、运行前环境检查、退出清理和离线 JSONL 回放。
+- 提供配置校验、规则列表、运行前环境检查、退出清理和离线 JSONL 回放；回放可预览规则结果而不创建输出文件。
 
 告警只表示满足规则条件。正常维护也可能触发默认规则，不能直接当作确认攻击。首版不包含文件/网络探针、Web 页面、Kubernetes、机器学习或自动阻断。
 
@@ -92,6 +92,8 @@ sudo jq -c '{rule_id, severity, evidence, source: .event.source}' data/alerts.js
 ./build/traceguard help
 ./build/traceguard version
 ./build/traceguard check-config --config configs/traceguard.json
+./build/traceguard list-rules
+./build/traceguard list-rules --format json
 sudo ./build/traceguard run --config configs/traceguard.json --output data-session-01
 ./build/traceguard replay --input examples/events.jsonl --output data-replay-01
 ```
@@ -105,7 +107,17 @@ sudo ./build/traceguard run --output data-session-02 --alert-format text
 
 `--alert-format json|text` 覆盖配置的 `alert_format`；省略配置字段时仍为 JSON。文本仅改变终端告警，磁盘中的两份 JSONL 保留完整结构。正常维护可通过规则的 `exclude_container_names` 设置例外，具体例子和新增统计字段见 [配置说明](configs/README.md)。默认配置未启用任何例外。
 
-回放不需要 root、Docker 或 eBPF 权限，但需要先构建 Go 程序。示例是三条**合成数据**，预期产生三个事件、一条 shell 告警。它们不能证明真实内核采集可用。回放要求单独的输出目录，拒绝与配置中实时目录相同，也拒绝向输入文件本身追加；输出事件会带 `replay: true`。回放保留原事件 ID，因此重复回放到同一目录会有重复记录。
+回放不需要 root、Docker 或 eBPF 权限，但需要先构建 Go 程序。示例是三条**合成数据**，正常回放预期保存三个事件、一条 shell 告警。它们不能证明真实内核采集可用。正常回放要求单独的输出目录，拒绝与配置中实时目录相同，也拒绝向输入文件本身追加；输出事件会带 `replay: true`。回放保留原事件 ID，因此重复回放到同一目录会有重复记录。
+
+v0.3.0 可用同一份事件反复预览规则结果（以下新命令本轮未执行）：
+
+```bash
+./build/traceguard replay --input examples/events.jsonl --dry-run --alert-format text
+```
+
+`--dry-run` 与 `--output` 不能同用。预览仅向终端输出告警及统计，不创建／追加日志或获取输出目录锁，也不访问配置中的输出路径。统计 `mode=replay-dry-run`，`saved` 与 `alerts` 均为 0，预览告警另计入 `preview_alerts` 和 `preview_alerts_by_rule`。仍按配置过滤 host、执行规则例外，输出中的事件带 `replay: true`。输入应选用已经停止追加的普通文件；shell 重定向输出由使用者自行负责，勿指向输入文件。
+
+`list-rules` 默认以文本列出全部规则（含停用规则）的条件与例外；`--format json` 输出规则数组。它会校验配置，但不访问 Docker、加载 eBPF 或创建日志。规则列表与预览的详细语义见 [配置说明](configs/README.md)。
 
 默认 `include_host=false`：过滤明确判断为主机来源的事件，保留 Docker 和 unknown 事件。`unknown` 不匹配 `scope=docker/host`，但可匹配显式的 `scope=any`。如要演示 host 规则，需要同时将 `include_host` 改为 `true`。
 
@@ -135,7 +147,7 @@ sudo ./build/traceguard run --output data-session-02 --alert-format text
 | --- | --- |
 | `make` 报 `asm/types.h` 或 BPF target 错误 | 检查 `linux-libc-dev`、`build-essential`、Ubuntu 的 Clang 安装；Makefile 通过 GCC multiarch 路径找头文件 |
 | Docker 连接失败 | 检查本机 daemon 和配置 socket；首次快照失败时停止启动，运行中刷新失败则报告并继续采集 |
-| 加载 eBPF 报权限／verifier 错误 | 保留完整错误、`uname -r` 和 tracepoint format；不要把 doctor 成功当作加载成功 |
+| 加载 eBPF 报权限／verifier 错误 | v0.3.0 对 verifier 拒绝会附带依赖库提供的详细日志；其他加载错误保留原提示。保存错误、`uname -r` 和 tracepoint format，不要把 doctor 成功当作加载成功 |
 | 容器为 `unknown` | 查看 `source.reason`；默认每 5 秒发起刷新，Docker 请求和扫描耗时另计，刷新失败时可能持续 unknown；极短寿命容器可能无法识别 |
 | 没有告警 | 先查 events，再核对来源和规则；检查 `excluded_by_rule` 是否命中例外。未知来源、未命中名称、shell 内建命令或失败 exec 均有不同含义 |
 | 文件名未匹配 | filename 最多 255 字节，可能相对路径、截断或为空；不解析软链接、脚本解释器或 BusyBox applet |
@@ -151,3 +163,5 @@ sudo ./build/traceguard run --output data-session-02 --alert-format text
 实现时核对了 [cilium/ebpf 对象加载文档](https://ebpf-go.dev/concepts/loader/)、[Linux v6.8 exec tracepoint 定义](https://github.com/torvalds/linux/blob/v6.8/include/trace/events/sched.h)、[内核 cgroup v2 文档](https://docs.kernel.org/admin-guide/cgroup-v2.html) 和 [Docker Engine API](https://docs.docker.com/reference/api/engine/version/v1.45/)。具体 ABI 与关联说明分别在 `bpf/README.md` 和 `internal/container/README.md`。
 
 v0.2.0 参考 Falco 的逐规则例外设计和 libbpf-bootstrap 的简洁终端展示，保留现有 cilium/ebpf 依赖及采集架构；实际采用范围见 [开源参考说明](docs/OPEN_SOURCE.md)。
+
+v0.3.0 再次核对 Falco 的规则列举与回放／输出分离设计，以及 cilium/ebpf 的 verifier 错误示例，补齐规则查看、离线预览和加载排错；未引入新依赖或增加探针。
