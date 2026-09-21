@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "events": 3,
+  "alerts": 1,
+  "rule_id": "docker-shell"
+}

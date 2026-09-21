@@ -1,0 +1,7 @@
+/build/
+/data/
+/data-*/
+*.log
+.DS_Store
+.idea/
+.vscode/

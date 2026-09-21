@@ -1,0 +1,29 @@
+{
+  "bpf_object": "build/exec.bpf.o",
+  "docker_socket": "/var/run/docker.sock",
+  "cgroup_root": "/sys/fs/cgroup",
+  "proc_root": "/proc",
+  "output_dir": "data",
+  "refresh_seconds": 5,
+  "include_host": false,
+  "rules": [
+    {
+      "id": "docker-shell",
+      "name": "Docker 容器中启动 shell",
+      "description": "容器启动了 shell 程序，需要结合维护操作和镜像用途判断。命中规则不等同于确认攻击。",
+      "severity": "warning",
+      "scope": "docker",
+      "executables": ["bash", "sh", "dash", "ash", "zsh"],
+      "enabled": true
+    },
+    {
+      "id": "docker-discovery",
+      "name": "Docker 容器中执行身份或系统信息查询",
+      "description": "容器执行了 id、whoami 或 uname，用于演示信息查询行为的规则检测；正常排障也会触发。",
+      "severity": "info",
+      "scope": "docker",
+      "executables": ["id", "whoami", "uname"],
+      "enabled": true
+    }
+  ]
+}

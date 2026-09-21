@@ -1,0 +1,2 @@
+2026/09/21 14:27:36 ready: session=9cbdd45f8546a6575c25be65 output=/home/urgot/TraceGuard/build/validation/20260921T062733Z-16549/integration/live-data; only successful process exec events are collected; Ctrl+C to stop
+{"kind":"stopped","mode":"live","observed_at":"2026-09-21T06:27:41.872332059Z","received":86,"saved":86,"host_filtered":0,"unknown":26,"alerts":4,"kernel_dropped":0}

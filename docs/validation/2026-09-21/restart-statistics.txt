@@ -1,0 +1,2 @@
+2026/09/21 14:27:41 ready: session=39ef79eaa2cb68f01fc9e940 output=/home/urgot/TraceGuard/build/validation/20260921T062733Z-16549/integration/restart-data; only successful process exec events are collected; Ctrl+C to stop
+{"kind":"stopped","mode":"live","observed_at":"2026-09-21T06:27:42.179772845Z","received":4,"saved":4,"host_filtered":0,"unknown":2,"alerts":1,"kernel_dropped":0}

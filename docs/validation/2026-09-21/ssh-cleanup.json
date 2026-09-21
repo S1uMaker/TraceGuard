@@ -1,0 +1,20 @@
+{
+  "removed_authorizations": 1,
+  "removed_staging_files": [
+    "traceguard-source-20260921.tar.gz",
+    "traceguard-test-update.tar.gz",
+    "traceguard-formatted-tests.tar.gz",
+    "traceguard-evidence-20260921.tar.gz"
+  ],
+  "removed_empty_setup_directories": [
+    "chmod",
+    "700",
+    "printf",
+    "%s\\n",
+    "no-agent-forwarding,no-port-forwarding,no-X11-forwarding ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMf1oJmr7lhK+q0DrduPnbceUbPiCBwNiRhLWJwEh7mQ traceguard-test-20260921",
+    "600"
+  ],
+  "skipped_nonempty_setup_directories": [],
+  "temporary_authorization_present": false,
+  "finished_at": "2026-09-21T06:58:24.410699+00:00"
+}

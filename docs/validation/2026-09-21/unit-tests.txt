@@ -1,0 +1,161 @@
+?   	github.com/zjc20/traceguard/internal/model	[no test files]
+=== RUN   TestReplayAcceptsMissingFilenameFromKernelReadFailure
+--- PASS: TestReplayAcceptsMissingFilenameFromKernelReadFailure (0.00s)
+=== RUN   TestReplayRejectsUnsupportedEventAndIncompleteSource
+=== RUN   TestReplayRejectsUnsupportedEventAndIncompleteSource/wrong_event_type
+=== RUN   TestReplayRejectsUnsupportedEventAndIncompleteSource/missing_source
+=== RUN   TestReplayRejectsUnsupportedEventAndIncompleteSource/docker_without_ID
+--- PASS: TestReplayRejectsUnsupportedEventAndIncompleteSource (0.00s)
+    --- PASS: TestReplayRejectsUnsupportedEventAndIncompleteSource/wrong_event_type (0.00s)
+    --- PASS: TestReplayRejectsUnsupportedEventAndIncompleteSource/missing_source (0.00s)
+    --- PASS: TestReplayRejectsUnsupportedEventAndIncompleteSource/docker_without_ID (0.00s)
+=== RUN   TestReplayRequiresDifferentDirectoryBeforeCreation
+--- PASS: TestReplayRequiresDifferentDirectoryBeforeCreation (0.00s)
+=== RUN   TestReplayRejectsParentSymlinkAlias
+--- PASS: TestReplayRejectsParentSymlinkAlias (0.00s)
+=== RUN   TestReplayRejectsInputAliasedAsOutput
+--- PASS: TestReplayRejectsInputAliasedAsOutput (0.00s)
+PASS
+ok  	github.com/zjc20/traceguard/cmd/traceguard	1.026s
+=== RUN   TestDecodeEventWireContract
+--- PASS: TestDecodeEventWireContract (0.00s)
+=== RUN   TestDecodeEventFullWidthStrings
+--- PASS: TestDecodeEventFullWidthStrings (0.00s)
+=== RUN   TestDecodeEventRejectsInvalidSizes
+--- PASS: TestDecodeEventRejectsInvalidSizes (0.00s)
+=== RUN   TestCStringNULTermination
+=== RUN   TestCStringNULTermination/nil
+=== RUN   TestCStringNULTermination/empty
+=== RUN   TestCStringNULTermination/starts_with_NUL
+=== RUN   TestCStringNULTermination/first_NUL_wins
+=== RUN   TestCStringNULTermination/no_terminator
+--- PASS: TestCStringNULTermination (0.00s)
+    --- PASS: TestCStringNULTermination/nil (0.00s)
+    --- PASS: TestCStringNULTermination/empty (0.00s)
+    --- PASS: TestCStringNULTermination/starts_with_NUL (0.00s)
+    --- PASS: TestCStringNULTermination/first_NUL_wins (0.00s)
+    --- PASS: TestCStringNULTermination/no_terminator (0.00s)
+PASS
+ok  	github.com/zjc20/traceguard/internal/collector	1.020s
+=== RUN   TestLoadPreservesExplicitRootUID
+--- PASS: TestLoadPreservesExplicitRootUID (0.00s)
+=== RUN   TestLoadRejectsInvalidConfigurations
+=== RUN   TestLoadRejectsInvalidConfigurations/misspelled_scope
+=== RUN   TestLoadRejectsInvalidConfigurations/overflow_UID
+=== RUN   TestLoadRejectsInvalidConfigurations/unknown_field
+=== RUN   TestLoadRejectsInvalidConfigurations/case_alias
+=== RUN   TestLoadRejectsInvalidConfigurations/relative_socket
+=== RUN   TestLoadRejectsInvalidConfigurations/zero_refresh
+=== RUN   TestLoadRejectsInvalidConfigurations/negative_UID
+=== RUN   TestLoadRejectsInvalidConfigurations/trailing_JSON
+=== RUN   TestLoadRejectsInvalidConfigurations/duplicate_field
+=== RUN   TestLoadRejectsInvalidConfigurations/empty_executable_list
+=== RUN   TestLoadRejectsInvalidConfigurations/relative_executable_path
+--- PASS: TestLoadRejectsInvalidConfigurations (0.01s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/misspelled_scope (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/overflow_UID (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/unknown_field (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/case_alias (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/relative_socket (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/zero_refresh (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/negative_UID (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/trailing_JSON (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/duplicate_field (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/empty_executable_list (0.00s)
+    --- PASS: TestLoadRejectsInvalidConfigurations/relative_executable_path (0.00s)
+PASS
+ok  	github.com/zjc20/traceguard/internal/config	1.032s
+=== RUN   TestValidateCgroupPath
+--- PASS: TestValidateCgroupPath (0.00s)
+=== RUN   TestDockerIDFromPath
+=== RUN   TestDockerIDFromPath/systemd
+=== RUN   TestDockerIDFromPath/systemd_child
+=== RUN   TestDockerIDFromPath/cgroupfs
+=== RUN   TestDockerIDFromPath/nested_uses_innermost
+=== RUN   TestDockerIDFromPath/host
+=== RUN   TestDockerIDFromPath/short_ID
+=== RUN   TestDockerIDFromPath/uppercase_ID
+=== RUN   TestDockerIDFromPath/scope_suffix_must_be_exact
+=== RUN   TestDockerIDFromPath/ID_component_must_be_exact
+=== RUN   TestDockerIDFromPath/bare_ID_is_not_Docker_proof
+--- PASS: TestDockerIDFromPath (0.00s)
+    --- PASS: TestDockerIDFromPath/systemd (0.00s)
+    --- PASS: TestDockerIDFromPath/systemd_child (0.00s)
+    --- PASS: TestDockerIDFromPath/cgroupfs (0.00s)
+    --- PASS: TestDockerIDFromPath/nested_uses_innermost (0.00s)
+    --- PASS: TestDockerIDFromPath/host (0.00s)
+    --- PASS: TestDockerIDFromPath/short_ID (0.00s)
+    --- PASS: TestDockerIDFromPath/uppercase_ID (0.00s)
+    --- PASS: TestDockerIDFromPath/scope_suffix_must_be_exact (0.00s)
+    --- PASS: TestDockerIDFromPath/ID_component_must_be_exact (0.00s)
+    --- PASS: TestDockerIDFromPath/bare_ID_is_not_Docker_proof (0.00s)
+=== RUN   TestDockerRootPathAndIDMembership
+=== RUN   TestDockerRootPathAndIDMembership/systemd_child
+=== RUN   TestDockerRootPathAndIDMembership/cgroupfs_child
+=== RUN   TestDockerRootPathAndIDMembership/custom_parent_with_full_ID
+=== RUN   TestDockerRootPathAndIDMembership/unrelated
+=== RUN   TestDockerRootPathAndIDMembership/ID_substring_is_not_membership
+=== RUN   TestDockerRootPathAndIDMembership/scope_substring_is_not_membership
+--- PASS: TestDockerRootPathAndIDMembership (0.00s)
+    --- PASS: TestDockerRootPathAndIDMembership/systemd_child (0.00s)
+    --- PASS: TestDockerRootPathAndIDMembership/cgroupfs_child (0.00s)
+    --- PASS: TestDockerRootPathAndIDMembership/custom_parent_with_full_ID (0.00s)
+    --- PASS: TestDockerRootPathAndIDMembership/unrelated (0.00s)
+    --- PASS: TestDockerRootPathAndIDMembership/ID_substring_is_not_membership (0.00s)
+    --- PASS: TestDockerRootPathAndIDMembership/scope_substring_is_not_membership (0.00s)
+=== RUN   TestContainerHintsPreventHostAssumption
+--- PASS: TestContainerHintsPreventHostAssumption (0.00s)
+=== RUN   TestResolveCachedMetadataAndExpiry
+=== RUN   TestResolveCachedMetadataAndExpiry/fresh
+=== RUN   TestResolveCachedMetadataAndExpiry/stale_but_unexpired
+=== RUN   TestResolveCachedMetadataAndExpiry/preserve_missing_snapshot_reason
+=== RUN   TestResolveCachedMetadataAndExpiry/expired
+--- PASS: TestResolveCachedMetadataAndExpiry (0.00s)
+    --- PASS: TestResolveCachedMetadataAndExpiry/fresh (0.00s)
+    --- PASS: TestResolveCachedMetadataAndExpiry/stale_but_unexpired (0.00s)
+    --- PASS: TestResolveCachedMetadataAndExpiry/preserve_missing_snapshot_reason (0.00s)
+    --- PASS: TestResolveCachedMetadataAndExpiry/expired (0.00s)
+=== RUN   TestResolveMissingIdentifiersRemainUnknown
+--- PASS: TestResolveMissingIdentifiersRemainUnknown (0.00s)
+PASS
+ok  	github.com/zjc20/traceguard/internal/container	1.026s
+=== RUN   TestDirectoryLockAndPrivatePermissions
+--- PASS: TestDirectoryLockAndPrivatePermissions (0.01s)
+=== RUN   TestInitializationFailureReleasesLockWithoutChangingPermissions
+--- PASS: TestInitializationFailureReleasesLockWithoutChangingPermissions (0.00s)
+=== RUN   TestWriterAppendsAndRejectsWritesAfterClose
+--- PASS: TestWriterAppendsAndRejectsWritesAfterClose (0.01s)
+PASS
+ok  	github.com/zjc20/traceguard/internal/output	1.027s
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence/wrong_UID
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence/wrong_container
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence/unknown_source
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence/host_source
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence/unmatched_program
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence/missing_filename
+=== RUN   TestRuleCombinesConditionsAndRetainsEvidence/wrong_event_type
+--- PASS: TestRuleCombinesConditionsAndRetainsEvidence (0.00s)
+    --- PASS: TestRuleCombinesConditionsAndRetainsEvidence/wrong_UID (0.00s)
+    --- PASS: TestRuleCombinesConditionsAndRetainsEvidence/wrong_container (0.00s)
+    --- PASS: TestRuleCombinesConditionsAndRetainsEvidence/unknown_source (0.00s)
+    --- PASS: TestRuleCombinesConditionsAndRetainsEvidence/host_source (0.00s)
+    --- PASS: TestRuleCombinesConditionsAndRetainsEvidence/unmatched_program (0.00s)
+    --- PASS: TestRuleCombinesConditionsAndRetainsEvidence/missing_filename (0.00s)
+    --- PASS: TestRuleCombinesConditionsAndRetainsEvidence/wrong_event_type (0.00s)
+=== RUN   TestExecutableMatchingAndScopeBoundaries
+=== RUN   TestExecutableMatchingAndScopeBoundaries/basename
+=== RUN   TestExecutableMatchingAndScopeBoundaries/absolute_exact
+=== RUN   TestExecutableMatchingAndScopeBoundaries/absolute_differs
+=== RUN   TestExecutableMatchingAndScopeBoundaries/no_glob
+=== RUN   TestExecutableMatchingAndScopeBoundaries/explicit_any
+=== RUN   TestExecutableMatchingAndScopeBoundaries/disabled
+--- PASS: TestExecutableMatchingAndScopeBoundaries (0.00s)
+    --- PASS: TestExecutableMatchingAndScopeBoundaries/basename (0.00s)
+    --- PASS: TestExecutableMatchingAndScopeBoundaries/absolute_exact (0.00s)
+    --- PASS: TestExecutableMatchingAndScopeBoundaries/absolute_differs (0.00s)
+    --- PASS: TestExecutableMatchingAndScopeBoundaries/no_glob (0.00s)
+    --- PASS: TestExecutableMatchingAndScopeBoundaries/explicit_any (0.00s)
+    --- PASS: TestExecutableMatchingAndScopeBoundaries/disabled (0.00s)
+PASS
+ok  	github.com/zjc20/traceguard/internal/rules	1.018s

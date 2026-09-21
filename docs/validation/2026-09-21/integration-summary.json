@@ -1,0 +1,143 @@
+{
+  "run_id": "d836e53194e74ac9b04fe5bb6277273e",
+  "started_at": "2026-09-21T06:27:36Z",
+  "project": "/home/urgot/TraceGuard",
+  "evidence_dir": "/home/urgot/TraceGuard/build/validation/20260921T062733Z-16549/integration",
+  "image_requested": "ubuntu:24.04",
+  "checks": {
+    "prerequisites": {
+      "status": "PASS",
+      "detail": "Built artifacts, local image, configuration and doctor checked"
+    },
+    "initial_ready": {
+      "status": "PASS",
+      "detail": "Collector reached ready",
+      "pid": 17370
+    },
+    "initial_evidence_deadline": {
+      "status": "PASS",
+      "detail": "Initial positive events, expected alerts and exact host PID must appear within 15 seconds"
+    },
+    "shell_alert": {
+      "status": "PASS",
+      "detail": "First container sh must match docker-shell",
+      "event_ids": [
+        "9cbdd45f8546a6575c25be65-4"
+      ]
+    },
+    "discovery_alert": {
+      "status": "PASS",
+      "detail": "First container id must match docker-discovery",
+      "event_ids": [
+        "9cbdd45f8546a6575c25be65-8"
+      ]
+    },
+    "sleep_event_no_alert": {
+      "status": "PASS",
+      "detail": "First container sleep must have an event and no alert",
+      "event_ids": [
+        "9cbdd45f8546a6575c25be65-12"
+      ]
+    },
+    "second_container_attribution": {
+      "status": "PASS",
+      "detail": "Second container id must carry its own exact container ID and name",
+      "event_ids": [
+        "9cbdd45f8546a6575c25be65-16"
+      ],
+      "expected_container_id": "c5e851bccb619e4fc79fe1203b1e59a81e1f62f7443faa3c7d1440909f9e947c"
+    },
+    "host_no_docker_alert": {
+      "status": "PASS",
+      "detail": "Observed exact host id PID must never receive Docker attribution or a Docker rule alert",
+      "host_pid": 17488,
+      "event_ids": [
+        "9cbdd45f8546a6575c25be65-17"
+      ],
+      "source_kinds": [
+        "host"
+      ]
+    },
+    "failed_exec_no_event": {
+      "status": "PASS",
+      "detail": "Nonexistent executable must fail with no successful exec record; later success must be observed",
+      "returncode": 127,
+      "filename": "/traceguard-verify-missing-d836e53194e74ac9b04fe5bb6277273e",
+      "later_barrier_observed": true,
+      "successful_exec_records": 0,
+      "diagnostic_streams": [
+        "stdout"
+      ]
+    },
+    "late_container_attribution": {
+      "status": "PASS",
+      "detail": "New container must become attributable and alert within 20 seconds",
+      "container_id": "a146864625bcba8091a8c62ee22490584fa30ea4860f13c796b3c2149fd6a806",
+      "container_name": "traceguard-verify-d836e53194e7-late"
+    },
+    "directory_lock": {
+      "status": "PASS",
+      "detail": "Second instance must fail with the output-directory lock error",
+      "returncode": 1
+    },
+    "graceful_stop": {
+      "status": "PASS",
+      "detail": "Expected clean exit after SIGINT within 10 seconds",
+      "returncode": 0,
+      "forced_signals": [],
+      "already_exited": false
+    },
+    "restart_ready": {
+      "status": "PASS",
+      "detail": "Collector reached ready",
+      "pid": 17746
+    },
+    "restart_event": {
+      "status": "PASS",
+      "detail": "Restarted collector must save and alert on a real container id exec"
+    },
+    "restart_graceful_stop": {
+      "status": "PASS",
+      "detail": "Expected clean exit after SIGINT within 10 seconds",
+      "returncode": 0,
+      "forced_signals": [],
+      "already_exited": false
+    },
+    "cleanup": {
+      "status": "PASS",
+      "detail": "Only label-verified containers created by this run were removed",
+      "removed_container_ids": [
+        "a146864625bcba8091a8c62ee22490584fa30ea4860f13c796b3c2149fd6a806",
+        "c5e851bccb619e4fc79fe1203b1e59a81e1f62f7443faa3c7d1440909f9e947c",
+        "e5623cfd0aa237b910494db46f6834f78d817378ddaf26061cbe6d3b1219b3ec"
+      ],
+      "problems": []
+    }
+  },
+  "errors": [],
+  "notes": [
+    "These checks use real kernel events, not synthetic replay.",
+    "The copied test configuration sets include_host=true so the host negative assertion requires an observed host PID. Default rules and the production configuration are unchanged.",
+    "Negative assertions cover the recorded verification interval, not all possible executions or a claim of zero event loss."
+  ],
+  "artifacts_sha256": {
+    "configs/traceguard.json": "a15e8d567fa0de6ea24ea4d0bc39cf8b943154888f99c033f984128be62c1e8b",
+    "build/traceguard": "dceebf4dd7f5e264af39c488ae4e028c1ec1ff723383eefd066fd9d35fecde25",
+    "build/exec.bpf.o": "d26e95fab5131774604b164cf92e8a8c240231c5f42c5350ea77e67cbe143786"
+  },
+  "image_id": "sha256:6232b38791000e3818b58d8847b5a8f5612d606929e01156dd8febc423e0f2ef",
+  "collector_exits": {
+    "live": {
+      "returncode": 0,
+      "forced_signals": [],
+      "already_exited": false
+    },
+    "restart": {
+      "returncode": 0,
+      "forced_signals": [],
+      "already_exited": false
+    }
+  },
+  "finished_at": "2026-09-21T06:27:42Z",
+  "status": "PASS"
+}
