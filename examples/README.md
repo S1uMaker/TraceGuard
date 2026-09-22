@@ -29,4 +29,23 @@ v0.3.0 可以直接预览，无需指定输出目录：
 
 使用默认配置的预期：显示一条 `docker-shell` 告警，统计为 `mode=replay-dry-run`、`received=3`、`unknown=1`、`unknown_reasons.other=1`、`saved=0`、`alerts=0`、`preview_alerts=1`，以及 `preview_alerts_by_rule.docker-shell=1`。不创建事件文件、告警文件或输出目录。
 
-若采用前述排除 `traceguard-demo` 的配置副本，预期不显示告警，改为 `excluded_alerts=1`、`excluded_by_rule.docker-shell=1`；零值 `preview_alerts` 和空的 `preview_alerts_by_rule` 不输出。上述 v0.3.0 结果同样只是源码对应的预期，本轮未执行回放或测试。
+若采用前述排除 `traceguard-demo` 的配置副本，预期不显示告警，改为 `excluded_alerts=1`、`excluded_by_rule.docker-shell=1`；零值 `preview_alerts` 和空的 `preview_alerts_by_rule` 不输出。2026-09-22 已使用包管理器场景实际验证相同的预览与例外统计路径；这里针对 shell 样例的具体例外组合仍是说明性预期。
+
+## v0.4.0 包管理器场景样例
+
+`package-manager-events.jsonl` 是独立的四行合成输入，不改变上面已在 v0.1.0 验证过的三行样例：
+
+| 样例 | 当前默认配置预期 |
+| --- | --- |
+| Docker 来源、UID 0 执行 `/usr/bin/apt-get` | 命中 `docker-root-package-manager`，`warning` |
+| Docker 来源、UID 1000 执行 `/usr/bin/apt-get` | 不满足 `uid=0`，不命中本规则 |
+| Docker 来源、UID 0 执行 `/usr/bin/sleep` | 文件名不匹配，不命中本规则 |
+| host 来源、UID 0 执行 `/usr/bin/apt-get` | 不满足 `scope=docker`；默认 `include_host=false` 时先被过滤 |
+
+预览命令：
+
+```bash
+./build/traceguard replay --input examples/package-manager-events.jsonl --dry-run --alert-format text
+```
+
+2026-09-22 已实际执行该预览，显示一条包管理器告警；统计为 `received=4`、`host_filtered=1`、`saved=0`、`alerts=0`、`preview_alerts=1` 和 `preview_alerts_by_rule.docker-root-package-manager=1`。容器名例外对照也通过：不显示告警，`excluded_alerts=1`。合成事件本身仍不是内核采集证据；本轮另有真实容器专项场景，结果见 [v0.4.0 验证报告](../docs/validation/2026-09-22/REPORT.md)，检测边界见 [场景说明](../docs/SCENARIOS.md)。

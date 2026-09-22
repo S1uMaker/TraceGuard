@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "container": "traceguard-v04-pkg-7509",
+  "checks": {
+    "version": "v0.4.0",
+    "config_and_rule_list": "passed",
+    "dry_run_positive_and_controls": "passed",
+    "container_exception": "passed",
+    "live_root_package_manager_alert": "passed",
+    "live_nonroot_control_no_alert": "passed",
+    "live_normal_process_control_no_alert": "passed",
+    "graceful_stop": "passed"
+  },
+  "preview": {
+    "received": 4,
+    "host_filtered": 1,
+    "preview_alerts": 1,
+    "rule_id": "docker-root-package-manager"
+  },
+  "live": {
+    "target_events": 3,
+    "package_manager_alerts": 1,
+    "kernel_dropped": 0
+  },
+  "cleanup": {
+    "leftover_containers": 0,
+    "leftover_traceguard_processes": 0
+  }
+}

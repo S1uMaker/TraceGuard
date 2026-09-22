@@ -10,7 +10,7 @@ import (
 	"github.com/zjc20/traceguard/internal/rules"
 )
 
-const version = "0.3.0"
+const version = "0.4.0"
 
 func main() {
 	if err := execute(os.Args[1:]); err != nil {

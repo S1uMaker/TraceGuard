@@ -68,11 +68,11 @@
 
 unknown 分类只允许代码中固定的原因：`missing_cgroup_id_or_pid`、`process_cgroup_unavailable`、`cgroup_path_unavailable`、`event_cgroup_no_longer_matches_process`、`docker_metadata_not_cached`、`unresolved_container_cgroup`、`docker_snapshot_unavailable_or_stale`、`unrecognized_cgroup_layout`、`conflicting_container_cgroup_mapping`、`cached_container_not_in_latest_snapshot`。缺少原因归入 `unspecified`，其他文字（包括合成样例的解释文字）归入 `other`，避免回放无限产生分类键。原事件的详细 `source.reason` 不变；Docker 来源附带的缓存提示不会计入 unknown。
 
-本节新增行为属于 v0.2.0 源码实现，本轮按要求未编译或测试。v0.1.0 的历史验收不覆盖这些新增字段。
+本节新增行为属于 v0.2.0 源码实现，初次交付时按要求未编译或测试。文本告警和规则例外后来在 2026-09-22 的 v0.4.0 专项场景中通过；v0.1.0 的历史验收仍不覆盖这些新增字段。
 
 ## v0.3.0：查看规则与不落盘预览
 
-这两个入口使用同一份现有配置，本轮没有新增 JSON 配置字段。以下命令是使用说明，尚未执行。
+这两个入口使用同一份现有配置，没有新增 JSON 配置字段。以下命令已在 2026-09-22 的当前源码验证中覆盖。
 
 ```bash
 ./build/traceguard list-rules --config configs/traceguard.json
@@ -94,7 +94,21 @@ unknown 分类只允许代码中固定的原因：`missing_cgroup_id_or_pid`、`
 
 预览保持每行最多 1 MiB、非法内容报出行号、缺失 ID／时间补全及 host 过滤规则。遇到后续坏行或终端输出错误时停止并返回错误；此前可能已经输出部分告警和统计，不能把它们当作完整成功结果。输入文件应已经停止追加，程序不锁定输入文件，也不提供实时跟随。输入权限仍由操作系统控制；如果自行使用 shell 重定向，不要把 stdout/stderr 指向输入文件。
 
-该预览命令用于以后调整规则，不表示本轮已经测试项目。v0.2.0 与 v0.3.0 增量均待后续验证，原 v0.1.0 报告保持原样。
+该预览命令用于调整规则。2026-09-22 已使用 v0.4.0 专项夹具验证预览统计、文本告警和容器名例外；结果见 [最新验证报告](../docs/validation/2026-09-22/REPORT.md)。原 v0.1.0 报告保持原样。
+
+## v0.4.0：root 包管理器场景
+
+默认配置新增 `docker-root-package-manager`，匹配已经确认属于 Docker、主机侧 UID 为 0，且文件名最后一段为以下操作系统包管理器之一的成功 exec：
+
+```text
+apt apt-get dpkg apk dnf yum rpm microdnf zypper pacman
+```
+
+这条规则使用现有字段组合，没有特殊代码分支。它的告警准确含义是“root 在容器中启动了包管理器”，并不证明参数是安装命令、安装成功或行为恶意。`apt-get --version` 也会命中；非 root、host、unknown 和未列出的程序不会命中。完整的正反对照、分析步骤与误报／漏报边界见 [场景说明](../docs/SCENARIOS.md)。
+
+若某个固定维护容器确实需要反复执行包管理器，可在该规则添加 `exclude_container_names`。例外只按已确认的精确容器名匹配，原始事件仍保留；不要把动态生产容器普遍加入例外，也不要把容器名当作不可绕过的安全身份。
+
+本规则和配套合成输入已于 2026-09-22 完成配置校验、规则列表、不落盘回放、容器名例外和真实容器采集。root 正例产生一条新规则告警，非 root 和普通进程对照均未产生该规则告警；证据见 [v0.4.0 验证报告](../docs/validation/2026-09-22/REPORT.md)。v0.1.0 验证报告中的默认配置仍只有当时的两条规则。
 
 ## 输出权限与恢复边界
 

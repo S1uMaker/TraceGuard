@@ -2,13 +2,13 @@
 
 基于 **C/eBPF + Go** 的单机 Docker 容器运行时行为监控项目。第一版监控成功的进程执行，关联容器，按配置检测并保留原始事件与告警，面向 Ubuntu 24.04 虚拟机中的学习、演示和简历项目积累。
 
-**当前源码：0.3.0，本轮新增规则列表、不落盘回放预览和 eBPF 加载失败诊断；按用户要求未编译、未测试。** v0.2.0 的规则例外、分类统计和文本告警同样尚未重新验证。已验证基线为 v0.1.0：2026-09-21 在 Ubuntu 24.04.3、Linux 7.0.0-31-generic、amd64、Docker 29.1.3 环境下，构建、22 个单元测试函数及子场景、竞态检测、静态检查、回放和 16 项集成检查全部通过。详见 [验证报告与原始证据](docs/validation/2026-09-21/REPORT.md)；历史结果不代表后续新增功能已经通过验证。
+**当前源码：0.4.0，已于 2026-09-22 在 Ubuntu 24.04.3、Linux 7.0.0-31-generic、amd64、Docker 29.1.3 环境完成重新构建、race 单测、静态检查、回放、16 项真实集成检查和 root 包管理器专项场景，全部通过。** 专项场景实际覆盖规则列表、不落盘预览、文本告警、容器例外，以及 root 正例、非 root 和普通程序对照；测试容器和进程已清理。详见 [v0.4.0 验证报告与原始证据](docs/validation/2026-09-22/REPORT.md)。verifier 的详细失败诊断未通过篡改 BPF 对象强制触发；正常对象已真实加载。v0.1.0 的历史记录继续保留在 [首轮报告](docs/validation/2026-09-21/REPORT.md)。
 
 ## 当前功能
 
 - eBPF 挂载 `sched/sched_process_exec`，采集成功 exec 的文件名、主机 PID/TID、UID/GID、任务名、cgroup ID 和单调时间。
 - Go 通过 ring buffer 读取事件，用 Docker 元数据与 cgroup v2 inode 关联来源；不能确认的来源保留为 `unknown`。
-- 默认检测容器内启动 shell、执行 `id/whoami/uname` 两类行为；规则可限定容器名、UID 和精确可执行文件名，并可按规则排除指定容器的告警，原始事件仍保留。
+- 默认检测容器内启动 shell、执行 `id/whoami/uname`，以及 UID 0 启动操作系统包管理器；规则可限定容器名、UID 和精确可执行文件名，并可按规则排除指定容器的告警，原始事件仍保留。
 - 追加保存 `events.jsonl` 与 `alerts.jsonl`；告警包含事件快照、规则 ID 和命中依据。终端默认输出 JSON，可选简洁文本；标准错误输出状态、内核丢失计数、unknown 原因和各规则告警／例外次数。
 - 提供配置校验、规则列表、运行前环境检查、退出清理和离线 JSONL 回放；回放可预览规则结果而不创建输出文件。
 
@@ -98,7 +98,7 @@ sudo ./build/traceguard run --config configs/traceguard.json --output data-sessi
 ./build/traceguard replay --input examples/events.jsonl --output data-replay-01
 ```
 
-v0.2.0 的可选文本展示适合手工演示（以下新用法本轮未执行，需在 Ubuntu 重新构建后使用）：
+v0.2.0 的可选文本展示适合手工演示；当前版本已经重新构建，文本输出也在 v0.4.0 专项场景中通过：
 
 ```bash
 sudo ./build/traceguard run --output data-session-02 --alert-format text
@@ -109,7 +109,7 @@ sudo ./build/traceguard run --output data-session-02 --alert-format text
 
 回放不需要 root、Docker 或 eBPF 权限，但需要先构建 Go 程序。示例是三条**合成数据**，正常回放预期保存三个事件、一条 shell 告警。它们不能证明真实内核采集可用。正常回放要求单独的输出目录，拒绝与配置中实时目录相同，也拒绝向输入文件本身追加；输出事件会带 `replay: true`。回放保留原事件 ID，因此重复回放到同一目录会有重复记录。
 
-v0.3.0 可用同一份事件反复预览规则结果（以下新命令本轮未执行）：
+v0.3.0 可用同一份事件反复预览规则结果；该入口已在 v0.4.0 专项场景中实际验证：
 
 ```bash
 ./build/traceguard replay --input examples/events.jsonl --dry-run --alert-format text
@@ -118,6 +118,8 @@ v0.3.0 可用同一份事件反复预览规则结果（以下新命令本轮未�
 `--dry-run` 与 `--output` 不能同用。预览仅向终端输出告警及统计，不创建／追加日志或获取输出目录锁，也不访问配置中的输出路径。统计 `mode=replay-dry-run`，`saved` 与 `alerts` 均为 0，预览告警另计入 `preview_alerts` 和 `preview_alerts_by_rule`。仍按配置过滤 host、执行规则例外，输出中的事件带 `replay: true`。输入应选用已经停止追加的普通文件；shell 重定向输出由使用者自行负责，勿指向输入文件。
 
 `list-rules` 默认以文本列出全部规则（含停用规则）的条件与例外；`--format json` 输出规则数组。它会校验配置，但不访问 Docker、加载 eBPF 或创建日志。规则列表与预览的详细语义见 [配置说明](configs/README.md)。
+
+v0.4.0 的重点场景是 `docker-root-package-manager`：仅当已确认 Docker 来源、UID 为 0，且成功执行 `apt/apt-get/dpkg/apk/dnf/yum/rpm/microdnf/zypper/pacman` 之一时告警。它用于提示可能的运行时容器漂移，不证明已经安装软件或发生攻击。检测依据、正常行为对照、误报／漏报边界和独立合成输入见 [场景说明](docs/SCENARIOS.md)。
 
 默认 `include_host=false`：过滤明确判断为主机来源的事件，保留 Docker 和 unknown 事件。`unknown` 不匹配 `scope=docker/host`，但可匹配显式的 `scope=any`。如要演示 host 规则，需要同时将 `include_host` 改为 `true`。
 
@@ -136,6 +138,7 @@ v0.3.0 可用同一份事件反复预览规则结果（以下新命令本轮未�
 | `cmd/traceguard/` | 命令入口、实时处理、统计、信号退出和回放 |
 | `docs/DESIGN.md` | 数据流、选择理由、讲解线索和边界 |
 | `docs/OPEN_SOURCE.md` | 开源依赖、借鉴来源、本轮取舍及实现对应关系 |
+| `docs/SCENARIOS.md` | 具体检测场景、对照行为、分析步骤与误报／漏报边界 |
 | `scripts/`、各包 `*_test.go` | Ubuntu 自动验收、单元测试与真实集成检查 |
 | `docs/DEMO.md`、`docs/validation/` | 演示步骤、验证报告和真实证据 |
 
@@ -165,3 +168,5 @@ v0.3.0 可用同一份事件反复预览规则结果（以下新命令本轮未�
 v0.2.0 参考 Falco 的逐规则例外设计和 libbpf-bootstrap 的简洁终端展示，保留现有 cilium/ebpf 依赖及采集架构；实际采用范围见 [开源参考说明](docs/OPEN_SOURCE.md)。
 
 v0.3.0 再次核对 Falco 的规则列举与回放／输出分离设计，以及 cilium/ebpf 的 verifier 错误示例，补齐规则查看、离线预览和加载排错；未引入新依赖或增加探针。
+
+v0.4.0 参考 Falco 的容器包管理器场景，以现有字段实现范围更窄的 root 操作系统包管理器规则，并明确记录无法判断命令参数、父进程和实际文件变更的边界。

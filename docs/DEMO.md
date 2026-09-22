@@ -2,7 +2,7 @@
 
 本文件用于手工演示与再次复现。2026-09-21 已通过对应的自动化场景，详见 [实际验证报告](validation/2026-09-21/REPORT.md)；自动化采用独立随机容器名，不是下文固定演示名称。先完成 [README](../README.md) 的依赖安装和构建，命令从 Ubuntu 本地 `~/TraceGuard` 目录执行。下表“未填写”供你下次亲自演示时记录。
 
-上述历史结果对应 v0.1.0。v0.2.0 新增文本输出、规则例外和分类统计；v0.3.0 新增规则列表、回放预览和内核加载诊断。两轮增量均未重新编译、演示或测试；使用新选项前需同步并重新构建源码。
+上述首轮历史结果对应 v0.1.0。v0.2.0 新增文本输出、规则例外和分类统计；v0.3.0 新增规则列表、回放预览和内核加载诊断；v0.4.0 新增 root 包管理器场景。2026-09-22 已重新构建当前源码并完成完整验收和 v0.4.0 专项场景，见 [最新验证报告](validation/2026-09-22/REPORT.md)。
 
 ## 固定终端分工
 
@@ -92,7 +92,7 @@ sudo docker exec traceguard-late /usr/bin/id
 
 核对完成后在 A 终端按 `Ctrl+C`。保存退出统计，尤其是 `received`、`saved`、`host_filtered`、`unknown`、`alerts` 和 `kernel_dropped`。它们是本次进程的计数，不是输出目录历史总数。后续检查重复启动时使用另一个新输出目录。
 
-v0.2.0 还可读取 `unknown_reasons` 定位来源未知的原因，`alerts_by_rule` 查看各规则告警，`excluded_alerts` / `excluded_by_rule` 查看例外次数。这些是新增源码能力，本轮尚未验证。标准错误还包含诊断文字，不要将整个输出流当作纯 JSON。
+v0.2.0 还可读取 `unknown_reasons` 定位来源未知的原因，`alerts_by_rule` 查看各规则告警，`excluded_alerts` / `excluded_by_rule` 查看例外次数。2026-09-22 的专项场景已实际观察到 unknown、按规则告警和例外统计；标准错误还包含诊断文字，不要将整个输出流当作纯 JSON。
 
 配置错误场景：复制配置到新文件，故意将某条规则 `scope` 改为 `dockre`，执行 `check-config --config 新文件路径`，应明确报错且不加载采集器。不要修改或删除已有采集证据。
 
@@ -131,13 +131,13 @@ sudo docker rm traceguard-late
 
 保留 JSONL，不在清理演示容器时删除证据目录。
 
-## 8. 可选：解释规则例外（v0.2.0，尚未执行）
+## 8. 可选：解释规则例外（v0.2.0，统计路径已验证）
 
 修改配置副本中的一条规则，为其添加 `exclude_container_names`，例如 shell 规则排除 `traceguard-control`；完整字段说明见 [配置文档](../configs/README.md)。使用该副本重新启动后，匹配的 control shell 事件仍应保存，本条 shell 告警应被排除并计入 `excluded_by_rule`；demo 容器和其他规则仍按各自条件判断。保留配置副本才能解释当时的例外决定。
 
 这里只记录新功能的使用方法，没有运行这些操作，也没有将预期写入历史通过记录。回放同样支持例外和 `--alert-format text`，使用输入中的来源快照，不重新识别容器。
 
-## 9. 查看规则与预览告警（v0.3.0，尚未执行）
+## 9. 查看规则与预览告警（v0.3.0，已验证）
 
 下面的命令只读取配置和已有样例，不需要启动采集器：
 
@@ -152,3 +152,22 @@ sudo docker rm traceguard-late
 `replay --dry-run` 使用当前规则评估输入并显示告警，不创建输出目录、日志或锁文件，也不能同时指定 `--output`。默认样例预期产生一条预览告警；退出统计的 `mode` 为 `replay-dry-run`，`saved` 和 `alerts` 都为 0，`preview_alerts` 为 1，`preview_alerts_by_rule.docker-shell` 为 1。预览仍应用宿主机过滤及规则例外，更多字段说明见 [配置文档](../configs/README.md)。
 
 预览使用已有事件的来源快照，不能验证采集或容器归属是否正确。输入应为已停止写入的普通文件；不要把标准输出或标准错误重定向到输入文件。以上是使用说明及预期，本轮没有执行这些命令。
+
+## 10. root 包管理器场景（v0.4.0，已验证）
+
+保持采集器运行并确认 `traceguard-demo` 已能正确归属后，在行为端执行：
+
+```bash
+# 只查看版本，不更改软件包；用于展示规则信号及误报边界
+sudo docker exec traceguard-demo /usr/bin/apt-get --version
+
+# 同容器 root 正常程序对照
+sudo docker exec traceguard-demo /usr/bin/sleep 1
+
+# 宿主机作用域对照；include_host=false 时不会保存
+sudo /usr/bin/apt-get --version
+```
+
+第一条预期命中 `docker-root-package-manager`，证据应同时包含 Docker 来源、`apt-get` 文件名和 UID 0；第二条应只有事件、没有这条规则告警；第三条不能产生 Docker 作用域告警。第一条只是版本查询，仍会告警，这正是需要在讲解中明确的误报边界：当前采集不含参数，告警只能说明包管理器被启动。
+
+不启动采集器时，也可使用 `examples/package-manager-events.jsonl` 进行四项合成对照，命令和实际统计见 [样例说明](../examples/README.md)。完整判断依据、获准维护场景、漏报边界及调优方式见 [场景说明](SCENARIOS.md)。本轮 root 正例、非 root 对照、普通程序对照、正常退出和清理均已实际通过；固定容器名的命令用于以后复现。
